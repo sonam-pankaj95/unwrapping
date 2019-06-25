@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<!-- This browser html contains the javascript program for converting the observed camera image of cylinder inner surface to its unwrapped image canvas -->
+<html> <head>  <title> Cylindrical Image Unwrapping </title> </head>
+ <body>
+  <img name='Input' width=683 height=384 src='Sample.jpg'>
+  <form name=form1> Canvas Width (Pixels) = <input type="number" size="10" width="10" id="size" onclick=Update()> </form>
+  <form name=form2> Canvas Height (Pixels) = <input type="number" size="10" width="10" id="size" onclick=Update()> </form>
+  <canvas id='Output' style="border:1px solid #000000;">  </canvas>
+  <script>
+   var PI=3.1415927;
+   var w=1366; var h=768; //width and height of the input image  in pixel units
+   var W=683; var H=384; //width and height of the output image canvas in pixel units
+   var alpha=30; var alphar=alpha*PI/180; //Vertical semi-angular field of view
+   var s=1; //extent of sub-division of pixel for averaging - NOT USED
+    
+   //creating a canvas for reading the input camera image, its context and width/height in pixel units
+   var can=document.createElement('canvas');
+   var ctx=can.getContext('2d');
+   can.width=w; can.height=h;
+   //declaring variables for storing image data of input composite image
+   var imgd=[]; var pix=[];
+   
+   //canvas created for calculated output image and its context and width/height in pixel units
+   var can2=document.getElementById('Output');
+   var ctx2=can2.getContext('2d');
+   can2.width=W; can2.height=H;
+   //variables for storing image data of output image
+   var imgd2=[];  var pix2=[];
+      
+   function Calculate()
+   {
+    var xo; var yo;
+	var xi; var yi; var ri; 
+	var i; var j;
+	var fact1; var fact2;
+	var Indi; var Indo;
+	var wi; var hi;
+	
+	can2.width=W; can2.height=H;
+	ctx2.fillStyle='#FFFFFF'; //fill color of output canvas image
+    ctx2.fillRect(0,0,W,H); //fill the rectangle canvas with white color
+	imgd2=ctx2.getImageData(0,0,W,H); //initialize the white pixel data of the image, and in the array pix2
+    pix2=imgd2.data;
+	
+	fact1=W*h/(4*PI*Math.tan(alphar));
+	fact2=2*PI/W;
+	
+	for (i=0;i<H;i++)
+	{
+	 xo=H-i-0.5;
+	 ri=fact1/xo;
+	 
+	 for (j=0;j<W;j++)
+	 {
+	  yo=j+0.5-0.5*W;
+	  xi=-ri*Math.cos(fact2*yo);
+	  yi=Math.sqrt(ri*ri-xi*xi);
+	  if (yo<0) yi=-yi;
+	  //yi=5;
+	  wi=Math.floor(yi-0.5+0.5*w);
+	  hi=Math.floor(-xi-0.5+0.5*h);
+	  
+	  Indo=4*(W*(i)+j);
+	  pix2[Indo]=0; pix2[Indo+1]=0; pix2[Indo+2]=0;
+	  if ( (wi>=0) && (wi<w) && (hi>=0) && (hi<h) )
+	  {
+	   Indi=4*(w*(hi)+wi);
+	   pix2[Indo]=pix[Indi];
+	   pix2[Indo+1]=pix[Indi+1];
+	   pix2[Indo+2]=pix[Indi+2];
+	   
+	  }
+	 }
+	 
+	 ctx2.putImageData(imgd2,0,0,0,0,W,H);
+	}
+   }
+   
+   function Update()
+   {
+    form1.size.value=Math.floor(form1.size.value)
+	if (form1.size.value<10) form1.size.value=10;
+	if (form1.size.value>10000) form1.size.value=10000;
+	W=form1.size.value;
+	form2.size.value=Math.floor(form2.size.value)
+	if (form2.size.value<10) form2.size.value=10;
+	if (form2.size.value>10000) form2.size.value=10000;
+	H=form2.size.value;
+	Calculate();
+   }
+
+   window.onload=function()
+   {
+    Input.src='Sample.jpg';
+	ctx.drawImage(Input,0,0);
+	imgd=ctx.getImageData(0,0,w,h);
+	pix=imgd.data;
+	form1.size.value=W; 
+	form2.size.value=H;
+	
+	Calculate();
+   }
+  </script>
+ </body>
+</html>
